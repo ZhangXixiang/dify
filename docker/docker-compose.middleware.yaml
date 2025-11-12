@@ -20,7 +20,8 @@ services:
     volumes:
       - ${PGDATA_HOST_VOLUME:-./volumes/db/data}:/var/lib/postgresql/data
     ports:
-      - "${EXPOSE_POSTGRES_PORT:-5432}:5432"
+#      - "${EXPOSE_POSTGRES_PORT:-5432}:5432"
+      - "${EXPOSE_POSTGRES_PORT:-5442}:5442"
     healthcheck:
       test:
         [
@@ -51,7 +52,8 @@ services:
     # Set the redis password when startup redis server.
     command: redis-server --requirepass ${REDIS_PASSWORD:-difyai123456}
     ports:
-      - "${EXPOSE_REDIS_PORT:-6379}:6379"
+#      - "${EXPOSE_REDIS_PORT:-6379}:6379"
+      - "${EXPOSE_REDIS_PORT:-6389}:6389"
     healthcheck:
       test:
         [
@@ -94,12 +96,14 @@ services:
     environment:
       # Use the shared environment variables.
       DB_HOST: ${DB_HOST:-db}
-      DB_PORT: ${DB_PORT:-5432}
+#      DB_PORT: ${DB_PORT:-5432}
+      DB_PORT: ${DB_PORT:-5442}
       DB_USERNAME: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-difyai123456}
       DB_DATABASE: ${DB_PLUGIN_DATABASE:-dify_plugin}
       REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
+#      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PORT: ${REDIS_PORT:-6389}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-difyai123456}
       SERVER_PORT: ${PLUGIN_DAEMON_PORT:-5002}
       SERVER_KEY: ${PLUGIN_DAEMON_KEY:-lYkiYYT6owG+71oLerGzA7GXCgOT++6ovaezWAjpCjf+Sjc3ZtU+qUEi}
