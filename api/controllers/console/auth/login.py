@@ -1,4 +1,5 @@
 from typing import cast
+import logging
 
 import flask_login
 from flask import request
@@ -35,6 +36,9 @@ from services.errors.workspace import WorkSpaceNotAllowedCreateError, Workspaces
 from services.feature_service import FeatureService
 
 
+logger = logging.getLogger(__name__)
+
+
 class LoginApi(Resource):
     """Resource for user login."""
 
@@ -50,14 +54,29 @@ class LoginApi(Resource):
         parser.add_argument("language", type=str, required=False, default="en-US", location="json")
         args = parser.parse_args()
 
+        ip_address = extract_remote_ip(request)
+        logger.info(
+            "console.login request email=%s ip=%s remember_me=%s invited=%s",
+            args.get("email"),
+            ip_address,
+            args.get("remember_me"),
+            bool(args.get("invite_token")),
+        )
+
         if dify_config.BILLING_ENABLED and BillingService.is_email_in_freeze(args["email"]):
+            logger.warning("console.login blocked: account_in_freeze email=%s ip=%s", args.get("email"), ip_address)
             raise AccountInFreezeError()
 
         is_login_error_rate_limit = AccountService.is_login_error_rate_limit(args["email"])
         if is_login_error_rate_limit:
+            logger.warning("console.login blocked: rate_limit email=%s ip=%s", args.get("email"), ip_address)
             raise EmailPasswordLoginLimitError()
 
         invitation = args["invite_token"]
+
+
+        logger.info("i am a log test, dify_config : %s", dify_config.model_dump())
+
         if invitation:
             invitation = RegisterService.get_invitation_if_token_valid(None, args["email"], invitation)
 
@@ -76,11 +95,15 @@ class LoginApi(Resource):
             else:
                 account = AccountService.authenticate(args["email"], args["password"])
         except services.errors.account.AccountLoginError:
+             # banned or disabled
+            logger.warning("console.login failed: banned_or_disabled email=%s ip=%s", args.get("email"), ip_address)
             raise AccountBannedError()
         except services.errors.account.AccountPasswordError:
             AccountService.add_login_error_rate_limit(args["email"])
+            logger.warning("console.login failed: bad_password email=%s ip=%s", args.get("email"), ip_address)
             raise AuthenticationFailedError()
         except services.errors.account.AccountNotFoundError:
+            logger.warning("console.login failed: account_not_found email=%s ip=%s", args.get("email"), ip_address)
             if FeatureService.get_system_features().is_allow_register:
                 token = AccountService.send_reset_password_email(email=args["email"], language=language)
                 return {"result": "fail", "data": token, "code": "account_not_found"}
@@ -99,7 +122,8 @@ class LoginApi(Resource):
                     "data": "workspace not found, please contact system admin to invite you to join in a workspace",
                 }
 
-        token_pair = AccountService.login(account=account, ip_address=extract_remote_ip(request))
+        token_pair = AccountService.login(account=account, ip_address=ip_address)
+        logger.info("console.login success account_id=%s ip=%s", getattr(account, "id", None), ip_address)
         AccountService.reset_login_error_rate_limit(args["email"])
         return {"result": "success", "data": token_pair.model_dump()}
 
