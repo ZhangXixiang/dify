@@ -24,6 +24,19 @@ def load_user_from_request(request_from_flask_login):
     if dify_config.SWAGGER_UI_ENABLED and request.path.endswith((dify_config.SWAGGER_UI_PATH, "/swagger.json")):
         return None
 
+    # Dev-only: bypass console/inner_api auth with a default owner account
+    if dify_config.DISABLE_CONSOLE_AUTH and request.blueprint in {"console", "inner_api"}:
+        tenant_account_join = (
+            db.session.query(Tenant, TenantAccountJoin)
+            .where(TenantAccountJoin.tenant_id == Tenant.id)
+            .where(TenantAccountJoin.role == "owner")
+            .first()
+        )
+        if tenant_account_join:
+            _, ta = tenant_account_join
+            # Use the standard loader to return a safely usable Account outside session
+            return AccountService.load_logged_in_account(account_id=ta.account_id)
+
     auth_header = request.headers.get("Authorization", "")
     auth_token: str | None = None
     if auth_header:

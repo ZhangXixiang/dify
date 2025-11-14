@@ -1,5 +1,5 @@
-from typing import cast
 import logging
+from typing import cast
 
 import flask_login
 from flask import request
@@ -34,7 +34,6 @@ from services.billing_service import BillingService
 from services.errors.account import AccountRegisterError
 from services.errors.workspace import WorkSpaceNotAllowedCreateError, WorkspacesLimitExceededError
 from services.feature_service import FeatureService
-
 
 logger = logging.getLogger(__name__)
 

@@ -20,6 +20,11 @@ class SecurityConfig(BaseSettings):
     Security-related configurations for the application
     """
 
+    DISABLE_CONSOLE_AUTH: bool = Field(
+        description="Dev-only: bypass auth for console/inner_api by loading a default owner account",
+        default=False,
+    )
+
     SECRET_KEY: str = Field(
         description="Secret key for secure session cookie signing."
         "Make sure you are changing this key for your deployment with a strong key."
