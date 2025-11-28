@@ -48,3 +48,12 @@ def downgrade():
                type_=sa.UUID(),
                existing_nullable=False)
     # ### end Alembic commands ###
+
+with op.batch_alter_table('datasource_oauth_params', schema=None) as batch_op:
+    batch_op.alter_column(
+        'plugin_id',
+        existing_type=sa.String(length=255),
+        type_=sa.UUID(),
+        existing_nullable=False,
+        postgresql_using='plugin_id::uuid'
+    )
